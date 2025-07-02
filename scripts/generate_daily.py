@@ -4,13 +4,15 @@ from faker import Faker
 import random
 from datetime import datetime
 import os
+import boto3
+from botocore.exceptions import NoCredentialsError
 
 # Seed for reproducibility
 np.random.seed(88)
 fake = Faker()
 
 # --- Config ---
-NUM_RECORDS = 500
+NUM_RECORDS = np.random.randint(400, 600)
 TODAY = pd.Timestamp.today().normalize()  # Consistent "daily" timestamp
 OUTPUT_DIR = 'data/raw/daily/'
 FILENAME = f'daily_transactions_{TODAY.strftime("%Y-%m-%d")}.csv'
@@ -56,5 +58,17 @@ df = pd.DataFrame(data, columns=[
     'employee', 'company', 'department', 'category',
     'merchant', 'amount', 'date', 'type'
 ])
-df.to_csv(os.path.join(OUTPUT_DIR, FILENAME), index=False)
-print(f"✅ {FILENAME} written to {OUTPUT_DIR}")
+
+# local_path = os.path.join(OUTPUT_DIR, FILENAME)
+# df.to_csv(local_path, index=False)
+# print(f"✅ {FILENAME} written to {OUTPUT_DIR}")
+
+bucket_name = "money-mop"
+s3_key = f"daily-transactions-raw/{FILENAME}"
+
+try:
+    s3 = boto3.client('s3')
+    s3.upload_file(FILENAME, bucket_name, s3_key)
+    print(f"✅ Uploaded to s3://{bucket_name}/{s3_key}")
+except NoCredentialsError:
+    print("❌ AWS credentials not found. File was not uploaded.")

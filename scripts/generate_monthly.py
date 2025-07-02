@@ -10,7 +10,7 @@ fake = Faker()
 OUTPUT_DIR = 'data/raw/monthly/'
 TODAY = pd.Timestamp.today()
 YEAR = TODAY.year
-MONTHS_BACK = 6  # simulate last 6 months
+MONTHS_BACK = 1  # simulate last 6 months
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # --- Generate Monthly Dates (first day of each month) ---
