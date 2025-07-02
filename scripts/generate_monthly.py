@@ -4,13 +4,15 @@ from faker import Faker
 import random
 from datetime import datetime
 import os
+import boto3
+from botocore.exceptions import NoCredentialsError
 
 # --- Setup ---
 fake = Faker()
 OUTPUT_DIR = 'data/raw/monthly/'
 TODAY = pd.Timestamp.today()
 YEAR = TODAY.year
-MONTHS_BACK = 1  # simulate last 6 months
+MONTHS_BACK = 1  # simulate last month
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # --- Generate Monthly Dates (first day of each month) ---
@@ -66,6 +68,20 @@ df_monthly = pd.DataFrame(recurring_rows, columns=[
     'merchant', 'amount', 'date', 'type'
 ])
 
-FILENAME = f'monthly_recurring_{TODAY.strftime("%Y-%m")}.csv'
-df_monthly.to_csv(os.path.join(OUTPUT_DIR, FILENAME), index=False)
+FILENAME = f"monthly_recurring_{TODAY.strftime('%Y-%m')}.csv"
+local_path = os.path.join(OUTPUT_DIR, FILENAME)
+
+# Save locally for testing
+df_monthly.to_csv(local_path, index=False)
 print(f"✅ {FILENAME} written to {OUTPUT_DIR}")
+
+# S3 upload
+bucket_name = "money-mop"
+s3_key = f"monthly-subscriptions-raw/{FILENAME}"
+
+try:
+    s3 = boto3.client("s3")
+    s3.upload_file(local_path, bucket_name, s3_key)
+    print(f"✅ Uploaded to s3://{bucket_name}/{s3_key}")
+except NoCredentialsError:
+    print("❌ AWS credentials not found. File was not uploaded.")

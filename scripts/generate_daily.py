@@ -13,7 +13,7 @@ fake = Faker()
 
 # --- Config ---
 NUM_RECORDS = np.random.randint(400, 600)
-TODAY = pd.Timestamp.today().normalize()  # Consistent "daily" timestamp
+TODAY = pd.Timestamp.today().normalize() - pd.Timedelta(days=1)  # Consistent "daily" timestamp
 OUTPUT_DIR = 'data/raw/daily/'
 FILENAME = f'daily_transactions_{TODAY.strftime("%Y-%m-%d")}.csv'
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -59,16 +59,17 @@ df = pd.DataFrame(data, columns=[
     'merchant', 'amount', 'date', 'type'
 ])
 
-# local_path = os.path.join(OUTPUT_DIR, FILENAME)
-# df.to_csv(local_path, index=False)
-# print(f"✅ {FILENAME} written to {OUTPUT_DIR}")
+local_path = os.path.join(OUTPUT_DIR, FILENAME)
+df.to_csv(local_path, index=False)
+print(f"✅ {FILENAME} written to {OUTPUT_DIR}")
 
+# Define S3 target
 bucket_name = "money-mop"
 s3_key = f"daily-transactions-raw/{FILENAME}"
 
 try:
     s3 = boto3.client('s3')
-    s3.upload_file(FILENAME, bucket_name, s3_key)
+    s3.upload_file(local_path, bucket_name, s3_key)
     print(f"✅ Uploaded to s3://{bucket_name}/{s3_key}")
 except NoCredentialsError:
     print("❌ AWS credentials not found. File was not uploaded.")

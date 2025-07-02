@@ -1,4 +1,11 @@
-venv
-__pychache__
-data
-keys.txt
+ Python
+__pycache__/
+*.pyc
+venv/
+
+# Data
+data/
+*.csv
+
+# Secrets
+.env

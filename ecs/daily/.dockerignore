@@ -1,0 +1,20 @@
+# randoms
+__pycache__/
+*.pyc
+*.ipynb
+.ipynb_checkpoints/
+
+# repo items
+app/
+dags/
+data/
+logs/
+notebooks/
+scripts/
+venv/
+.env
+.DS_Store
+.gitignore
+Procfile
+README.md
+requirements-dev.txt
