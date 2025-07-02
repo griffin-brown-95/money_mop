@@ -1,0 +1,7 @@
+pandas
+ipykernel
+faker
+scikit-learn
+seaborn
+matplotlib
+streamlit
