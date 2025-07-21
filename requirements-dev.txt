@@ -1,6 +1,0 @@
--r requirements.txt
-ipykernel
-jupyterlab
-black
-flake8
-pytest
