@@ -1,4 +1,5 @@
 pandas
+ipykernel
 scikit-learn
 matplotlib
 seaborn

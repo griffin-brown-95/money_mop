@@ -1,6 +1,5 @@
 from pyspark.sql.functions import col, when, rand, expr
 from utils import init_spark, write_delta
-%pip install PyYAML
 import yaml
 
 def enrich_silver(config):
