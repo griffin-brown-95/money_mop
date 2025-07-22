@@ -1,64 +1,59 @@
-from pyspark.sql import SparkSession
+import yaml
 import pandas as pd
 import numpy as np
-import random
-import uuid
-from datetime import datetime
+import random, uuid
+from datetime import datetime, timedelta
+from utils import init_spark, write_delta
 
-# --- Init and set seed ---
-spark = SparkSession.builder.getOrCreate()
-np.random.seed(88)
+def generate_daily(config):
+    """
+    Generate daily data for the previous day.
+    This function essentially mimics the logic of the daily extract job.
+    """
+    spark = init_spark("bronze")
+    n = random.randint(
+        config["daily_records"]["min"], 
+        config["daily_records"]["max"]
+    )
+    yesterday = pd.Timestamp.today().normalize() - timedelta(days=1)
+    date_str = yesterday.date().isoformat()
 
-# --- Config ---
-NUM_RECORDS = np.random.randint(400, 600)
-YESTERDAY = pd.Timestamp.today().normalize() - pd.Timedelta(days=1)  # Consistent "daily" timestamp
+    companies = spark.table(config['refs']['companies']).toPandas()
+    departments = spark.table(config['refs']['departments']).toPandas()
+    categories = spark.table(config['refs']['category_amounts']).toPandas()
+    merchants = spark.table(config['refs']['merchants']).toPandas()
 
-# --- Load reference Tables ---
-companies_df = spark.table("money_mop.ref_companies").toPandas()
-departments_df = spark.table("money_mop.ref_departments").toPandas()
-categories_df = spark.table("money_mop.ref_category_amounts").toPandas()
-merchants_df = spark.table("money_mop.ref_merchants").toPandas()
+    rows = []
+    for _ in range(n):
+        # sample one company & department
+        comp = companies.sample(1).iloc[0]["company_name"]
+        dept = departments.sample(1).iloc[0]["department_name"]
 
-# --- Generation ---
-data = []
-for _ in range(NUM_RECORDS):
-    company = companies_df.sample(1).iloc[0]['company_name']
-    department = departments_df.sample(1).iloc[0]['department_name']
-    category_row = categories_df.sample(1).iloc[0]
-    category = category_row['category']
-    mean = category_row['mean_amount']
-    std = category_row['std_amount']
-    
-    # Filter merchants by category
-    valid_merchants = merchants_df[merchants_df['category'] == category]['merchant'].tolist()
-    merchant = random.choice(valid_merchants)
+        # sample one category row
+        cat_row = categories.sample(1).iloc[0]
+        amt = max(1, np.random.normal(cat_row["mean_amount"], cat_row["std_amount"]))
 
-    amount = round(max(1, np.random.normal(loc=mean, scale=std)), 2)
+        # pick a merchant in that category
+        merch_row = merchants[merchants["category"] == cat_row["category"]].sample(1).iloc[0]
+        merch = merch_row["merchant"]
 
-    data.append([
-        str(uuid.uuid4()), 
-        company, 
-        department, 
-        category,
-        merchant, 
-        amount, 
-        str(YESTERDAY), 
-        'transaction'
-    ])
+        rows.append({
+            "transaction_id": str(uuid.uuid4()),
+            "company":        comp,
+            "department":     dept,
+            "category":       cat_row["category"],
+            "merchant":       merch,
+            "amount":         round(amt, 2),
+            "date":           date_str,
+            "type":           "transaction"
+        })
 
-# --- Create DataFrame & Export ---
-df_pd = pd.DataFrame(data, columns=[
-    'transaction_id',
-    'company', 
-    'department', 
-    'category',
-    'merchant', 
-    'amount', 
-    'date', 
-    'type'
-])
+    # turn into Spark DataFrame and write out as Delta
+    pdf = pd.DataFrame(rows)
+    df  = spark.createDataFrame(pdf)
+    write_delta(df, config["tables"]["bronze"], mode="append", partition_by="date")
 
-df_spark = spark.createDataFrame(df_pd)
-df_spark.write.format("delta").mode("append").saveAsTable("money_mop.bronze_daily_transactions")
+if __name__ == "__main__":
+    cfg = yaml.safe_load(open("config.yaml"))
+    generate_daily(cfg)
 
-print(f"{NUM_RECORDS} records written to table: money_mop.bronze_daily_transactions for {YESTERDAY}")

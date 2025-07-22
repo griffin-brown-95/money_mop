@@ -1,0 +1,16 @@
+# configs/config.yaml
+daily_records:
+  min: 400
+  max: 600
+
+refs:
+  companies: money_mop.ref_companies
+  departments: money_mop.ref_departments
+  category_amounts: money_mop.ref_category_amounts
+  merchants: money_mop.ref_merchants
+
+tables:
+  bronze: money_mop.bronze_daily_transactions
+  silver: money_mop.silver_daily_transactions
+  gold:   money_mop.gold_experiment_metrics
+  policy: money_mop.ref_cashback_policy
