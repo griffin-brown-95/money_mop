@@ -1,27 +1,27 @@
-from pyspark.sql import SparkSession
 from pyspark.sql.functions import sum as _sum, avg, count, col, round
+from utils import init_spark, write_delta
+import yaml
 
-# --- Init Spark ---
-spark = SparkSession.builder.getOrCreate()
+def aggregate_gold(config):
+    spark = init_spark("gold")
+    df = spark.table(config["tables"]["silver"])
 
-# --- Load Silver Data ---
-df_silver = spark.table("money_mop.silver_daily_transactions")
+    summary = (
+        df.groupBy("category", "experiment_group", "experiment_name")
+            .agg(
+                count("transaction_id").alias("transactions"),
+                round(_sum("amount"), 2).alias("total_spend"),
+                round(avg("amount"), 2).alias("avg_spend"),
+                round(_sum("cashback_amount"), 2).alias("total_cashback"),
+                round(avg("cashback_amount"), 2).alias("avg_cashback")
+            )
+        .orderBy("category", "experiment_group")
+    )
 
-# --- Aggregated experiment metrics ---
-df_gold = df_silver.groupBy("category", "experiment_group", "experiment_name").agg(
-    count("transaction_id").alias("transactions"),
-    round(_sum("amount"), 2).alias("total_spend"),
-    round(avg("amount"), 2).alias("avg_spend"),
-    round(_sum("cashback_amount"), 2).alias("total_cashback"),
-    round(avg("cashback_amount"), 2).alias("avg_cashback")
-).orderBy("category", "experiment_group")
+    #write_delta(summary, config["tables"]["gold"])
 
+    summary.show()
 
-# --- Write to gold ---
-df_gold.write \
-    .mode("overwrite") \
-    .option("mergeSchema", "true") \
-    .format("delta") \
-    .saveAsTable("money_mop.gold_experiment_metrics")
-
-print("Gold experiement layer written to money_mop.gold_experiment_metrics")
+if __name__ == "__main__":
+    cfg = yaml.safe_load(open("config.yaml"))
+    aggregate_gold(cfg)
