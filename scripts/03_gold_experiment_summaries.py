@@ -23,5 +23,5 @@ def aggregate_gold(config):
     summary.show()
 
 if __name__ == "__main__":
-    cfg = yaml.safe_load(open("config.yaml"))
+    cfg = yaml.safe_load(open("../config.yaml"))
     aggregate_gold(cfg)

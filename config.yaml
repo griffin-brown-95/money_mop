@@ -14,3 +14,11 @@ tables:
   silver: money_mop.silver_daily_transactions
   gold:   money_mop.gold_experiment_metrics
   policy: money_mop.ref_cashback_policy
+  experiment_power: money_mop.ref_experiment_power
+  experiment_plan: money_mop.experiment_sequential_plan
+
+sequential:
+  n_looks: 5
+  alpha: 0.05
+  spending_method: obrien_fleming
+  include_harm: false

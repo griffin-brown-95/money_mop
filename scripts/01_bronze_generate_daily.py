@@ -54,6 +54,6 @@ def generate_daily(config):
     write_delta(df, config["tables"]["bronze"], mode="append", partition_by="date")
 
 if __name__ == "__main__":
-    cfg = yaml.safe_load(open("config.yaml"))
+    cfg = yaml.safe_load(open("../config.yaml"))
     generate_daily(cfg)
 
