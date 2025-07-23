@@ -15,6 +15,7 @@ tables:
   gold:   money_mop.gold_experiment_metrics
   policy: money_mop.ref_cashback_policy
   experiment_power: money_mop.ref_experiment_power
+  experiment_plan: money_mop.experiment_sequential_plan
 
 sequential:
   n_looks: 5
