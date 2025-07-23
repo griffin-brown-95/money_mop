@@ -7,3 +7,4 @@ streamlit
 pyspark
 PyYAML
 statsmodels
+sequential

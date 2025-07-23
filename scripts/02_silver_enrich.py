@@ -17,6 +17,6 @@ def enrich_silver(config):
     write_delta(enriched, config["tables"]["silver"], partition_by="date")
 
 if __name__=="__main__":
-    cfg = yaml.safe_load(open("config.yaml"))
+    cfg = yaml.safe_load(open("../config.yaml"))
     enrich_silver(cfg)
 
